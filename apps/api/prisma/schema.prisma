@@ -1,0 +1,51 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Role {
+  id        String  @id @default(cuid())
+  name      String  @unique
+  users     User[]
+  createdAt DateTime @default(now())
+}
+
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String?
+  roleId       String
+  role         Role     @relation(fields: [roleId], references: [id])
+  createdAt    DateTime @default(now())
+  stats        RoundStat[]
+}
+
+model Round {
+  id          String   @id @default(uuid())
+  createdAt   DateTime @default(now())
+  startAt     DateTime
+  endAt       DateTime
+  totalPoints Int      @default(0)
+  totalTaps   Int      @default(0)
+  stats       RoundStat[]
+}
+
+model RoundStat {
+  id        String   @id @default(cuid())
+  roundId   String
+  userId    String
+  taps      Int      @default(0)
+  points    Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  round Round @relation(fields: [roundId], references: [id])
+  user  User  @relation(fields: [userId], references: [id])
+
+  @@unique([roundId, userId])
+  @@index([roundId])
+  @@index([userId])
+}

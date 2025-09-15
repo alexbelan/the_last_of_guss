@@ -1,0 +1,68 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: guss-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-guss}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-guss}
+      POSTGRES_DB: ${POSTGRES_DB:-guss}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB || exit 1",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+    networks:
+      - internal
+
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    container_name: guss-api
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      JWT_SECRET: dev-secret
+      DATABASE_URL: postgres://${POSTGRES_USER:-guss}:${POSTGRES_PASSWORD:-guss}@db:5432/${POSTGRES_DB:-guss}
+      COOLDOWN_DURATION_SEC: 0
+      ROUND_DURATION_SEC: 60
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    networks:
+      - internal
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+    container_name: guss-web
+    environment:
+      - VITE_API_BASE=http://localhost:3000
+    depends_on:
+      api:
+        condition: service_started
+    ports:
+      - "5173:3000"
+    networks:
+      - internal
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+
+networks:
+  internal:
+    driver: bridge
