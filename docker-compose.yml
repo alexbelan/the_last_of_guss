@@ -33,8 +33,8 @@ services:
       PORT: 3000
       JWT_SECRET: dev-secret
       DATABASE_URL: postgres://${POSTGRES_USER:-guss}:${POSTGRES_PASSWORD:-guss}@db:5432/${POSTGRES_DB:-guss}
-      COOLDOWN_DURATION_SEC: 0
-      ROUND_DURATION_SEC: 60
+      COOLDOWN_DURATION: 30
+      ROUND_DURATION: 60
     depends_on:
       db:
         condition: service_healthy

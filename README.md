@@ -39,8 +39,8 @@ POSTGRES_DB=guss
 
 # API
 JWT_SECRET=dev-secret
-ROUND_DURATION_SEC=60        # длительность раунда (сек)
-COOLDOWN_DURATION_SEC=30     # длительность подготовительного периода (сек)
+ROUND_DURATION=60        # длительность раунда (сек)
+COOLDOWN_DURATION=30     # длительность подготовительного периода (сек)
 
 # CORS: список origins через запятую
 CORS_ORIGINS=http://localhost:5173,http://localhost
