@@ -11,7 +11,7 @@ Monorepo: NestJS (Fastify) API, React (Vite) Web, Postgres. Запуск чер�
 
 ```
 .
-├─ docker-compose.yml          # запуск DB, API, Web
+├─ docker-compose.yml           # запуск DB, API, Web
 ├─ .env                         # переменные окружения (корень)
 ├─ apps/
 │  ├─ api/                      # NestJS + Prisma
@@ -55,7 +55,7 @@ VITE_API_PORT=3000
 # альтернативно: VITE_API_BASE=http://localhost:3000
 ```
 
-## Поднять сервер с нуля (без удаления всего Docker-окружения)
+## Поднять сервер с нуля
 
 1. Подготовить env-файлы (если ещё не созданы):
 
@@ -101,6 +101,65 @@ curl http://localhost:3000/health
 curl -X POST http://localhost:3000/auth/login \
   -H 'Content-Type: application/json' \
   -d '{"username":"admin","password":"123456"}'
+```
+
+### Пользователи и роли (сид‑данные)
+
+Кратко:
+
+Admin:
+Логин: admin
+Пароль: 123456
+
+Nikita:
+Логин: nikita
+Пароль: 123456
+
+Ivan:
+Логин: ivan
+Пароль: 123456
+
+Пароль по умолчанию у всех: `123456`.
+
+- `admin` — роль `admin`
+  - может создавать раунды: `POST /rounds`
+  - имеет доступ ко всем пользовательским возможностям
+- `ivan` — роль `survivor`
+  - обычный игрок: может тапать в активном раунде: `POST /rounds/:id/tap`
+- `nikita` — роль `banned`
+  - личные очки не начисляются (тапы не увеличивают `my.points`),
+  - по умолчанию его тапы не влияют на итоги раунда (totalPoints/totalTaps).
+
+Примеры логина:
+
+```
+curl -sS -X POST http://localhost:3000/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"admin","password":"123456"}' | jq
+
+curl -sS -X POST http://localhost:3000/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"ivan","password":"123456"}' | jq
+
+curl -sS -X POST http://localhost:3000/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"nikita","password":"123456"}' | jq
+```
+
+Использование токена:
+
+```
+curl -H "Authorization: Bearer <TOKEN>" http://localhost:3000/rounds/current
+```
+
+Как повторно применить сиды:
+
+- если БД пустая (после первого запуска): достаточно `migrate dev` и `node prisma/seed.js` (см. шаги выше)
+- если нужно перегенерировать данные с очисткой БД:
+
+```
+docker compose exec -T api npx prisma migrate reset --force
+docker compose exec -T api node prisma/seed.js
 ```
 
 ## Полезные эндпоинты

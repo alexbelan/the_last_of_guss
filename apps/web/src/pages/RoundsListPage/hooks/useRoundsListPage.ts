@@ -14,6 +14,8 @@ export function useRoundsListPage() {
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const isLoadingMoreRef = useRef(false);
+  const [serverNow, setServerNow] = useState<Date | null>(null);
+  const [serverOffsetMs, setServerOffsetMs] = useState<number>(0);
 
   const loadRounds = useCallback(async () => {
     setLoading(true);
@@ -22,6 +24,9 @@ export function useRoundsListPage() {
       dispatch(setRounds(res.items));
       setHasMore(Boolean(res.nextCursor));
       setNextCursor(res.nextCursor);
+      const server = new Date(res.serverTime);
+      setServerNow(server);
+      setServerOffsetMs(server.getTime() - Date.now());
     } finally {
       setLoading(false);
     }
@@ -60,6 +65,14 @@ export function useRoundsListPage() {
     return () => window.removeEventListener("scroll", onScroll);
   }, [dispatch, hasMore, rounds, nextCursor]);
 
+  // Тик серверного времени раз в секунду
+  useEffect(() => {
+    const id = setInterval(() => {
+      setServerNow(new Date(Date.now() + serverOffsetMs));
+    }, 1000);
+    return () => clearInterval(id);
+  }, [serverOffsetMs]);
+
   const canCreate = authRole === "admin";
 
   const onCreateRound = async () => {
@@ -72,5 +85,5 @@ export function useRoundsListPage() {
     }
   };
 
-  return { rounds, loading, canCreate, onCreateRound };
+  return { rounds, loading, canCreate, onCreateRound, serverNow };
 }

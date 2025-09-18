@@ -20,8 +20,12 @@ export class RoundsController {
   @Roles("admin")
   @Post()
   create() {
-    const cooldownSec = Number(process.env.COOLDOWN_DURATION_SEC || 30);
-    const durationSec = Number(process.env.ROUND_DURATION_SEC || 60);
+    const cooldownSec = Number(
+      process.env.COOLDOWN_DURATION ?? process.env.COOLDOWN_DURATION_SEC ?? 30
+    );
+    const durationSec = Number(
+      process.env.ROUND_DURATION ?? process.env.ROUND_DURATION_SEC ?? 60
+    );
     return this.roundsService.createByAdmin(
       new Date(),
       cooldownSec,

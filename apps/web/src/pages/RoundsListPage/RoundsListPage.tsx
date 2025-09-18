@@ -3,7 +3,16 @@ import { Link } from "react-router-dom";
 import { useRoundsListPage } from "./hooks/useRoundsListPage";
 
 export function RoundsListPage() {
-  const { rounds, loading, canCreate, onCreateRound } = useRoundsListPage();
+  const { rounds, loading, canCreate, onCreateRound, serverNow } =
+    useRoundsListPage();
+
+  function formatCountdown(ms: number) {
+    if (ms < 0) ms = 0;
+    const sec = Math.floor(ms / 1000);
+    const m = String(Math.floor(sec / 60)).padStart(2, "0");
+    const s = String(sec % 60).padStart(2, "0");
+    return `${m}:${s}`;
+  }
 
   return (
     <Stack>
@@ -22,29 +31,43 @@ export function RoundsListPage() {
             <Text c="dimmed">Загрузка...</Text>
           </Group>
         )}
-        {rounds.map((round) => (
-          <Card key={round.id} withBorder>
-            <Stack gap={4}>
-              <Text>
-                <b>Round ID:</b>{" "}
-                <Link to={`/rounds/${round.id}`}>{round.id}</Link>
-              </Text>
-              <Text>Start: {new Date(round.startAt).toLocaleString()}</Text>
-              <Text>End: {new Date(round.endAt).toLocaleString()}</Text>
-              <Text c="dimmed">
-                Статус:{" "}
-                {(() => {
-                  const now = new Date();
-                  const start = new Date(round.startAt);
-                  const end = new Date(round.endAt);
-                  if (now < start) return "Cooldown";
-                  if (now >= start && now < end) return "Активен";
-                  return "Завершен";
-                })()}
-              </Text>
-            </Stack>
-          </Card>
-        ))}
+        {rounds.map((round) => {
+          const now = serverNow ?? new Date();
+          const start = new Date(round.startAt);
+          const end = new Date(round.endAt);
+          const isCooldown = now < start;
+          const isActive = now >= start && now < end;
+          const statusLabel = isCooldown
+            ? "Cooldown"
+            : isActive
+            ? "Активен"
+            : "Завершен";
+          const countdown = isCooldown
+            ? formatCountdown(start.getTime() - now.getTime())
+            : isActive
+            ? formatCountdown(end.getTime() - now.getTime())
+            : null;
+
+          return (
+            <Card key={round.id} withBorder>
+              <Stack gap={4}>
+                <Text>
+                  <b>Round ID:</b>{" "}
+                  <Link to={`/rounds/${round.id}`}>{round.id}</Link>
+                </Text>
+                <Text>Start: {new Date(round.startAt).toLocaleString()}</Text>
+                <Text>End: {new Date(round.endAt).toLocaleString()}</Text>
+                <Text c="dimmed">Статус: {statusLabel}</Text>
+                {countdown && (
+                  <Text c="dimmed">
+                    {isCooldown ? "До начала: " : "До конца: "}
+                    {countdown}
+                  </Text>
+                )}
+              </Stack>
+            </Card>
+          );
+        })}
         {!loading && rounds.length === 0 && (
           <Text c="dimmed">Раундов пока нет</Text>
         )}

@@ -17,7 +17,6 @@ export class RoundsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async createByAdmin(now: Date, cooldownSec: number, durationSec: number) {
-    // normalize now to server time for consistency across instances
     const serverNow = await this.getServerNow();
     const startAt = new Date(serverNow.getTime() + cooldownSec * 1000);
     const endAt = new Date(startAt.getTime() + durationSec * 1000);
@@ -25,7 +24,6 @@ export class RoundsService {
   }
 
   async list(now: Date, filters: ListFilters) {
-    // ignore passed now and use DB time
     now = await this.getServerNow();
     const where: Prisma.RoundWhereInput = {};
     if (filters?.status) {
