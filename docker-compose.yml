@@ -28,13 +28,11 @@ services:
       context: ./apps/api
       dockerfile: Dockerfile
     container_name: guss-api
+    env_file:
+      - ./apps/api/.env
     environment:
       NODE_ENV: production
-      PORT: 3000
-      JWT_SECRET: dev-secret
-      DATABASE_URL: postgres://${POSTGRES_USER:-guss}:${POSTGRES_PASSWORD:-guss}@db:5432/${POSTGRES_DB:-guss}
-      COOLDOWN_DURATION: 30
-      ROUND_DURATION: 60
+      # DATABASE_URL, JWT_SECRET, ROUND/COOLDOWN берутся из env_file
     depends_on:
       db:
         condition: service_healthy
