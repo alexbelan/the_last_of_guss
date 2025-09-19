@@ -49,6 +49,7 @@ CORS_ORIGINS=http://localhost:5173,http://localhost
 Примечание:
 
 - Docker Compose для сервиса API читает переменные из файла `apps/api/.env` (см. `env_file` в `docker-compose.yml`).
+- Создайте `apps/api/.env` из `apps/api/.env.example` и используйте этот файл как для Docker, так и для локального запуска.
 - Переменные `POSTGRES_*` можно не задавать — в compose есть значения по умолчанию.
 
 Для фронта `apps/web/.env` (или `apps/web/.env.example` → `.env`):
@@ -189,16 +190,39 @@ docker run -d --name guss-db-local \
   -p 5432:5432 postgres:16-alpine
 ```
 
-2. Применить схему и сид БД, собрать и запустить API:
+2. Применить схему и сид БД, собрать и запустить API (bash/zsh):
+
+Подготовьте файл окружения для API:
+
+```
+cp -n apps/api/.env.example apps/api/.env 2>/dev/null || true
+# Для локального запуска отредактируйте DATABASE_URL на localhost в apps/api/.env:
+# DATABASE_URL=postgres://guss:guss@localhost:5432/guss
+```
+
+Выполните команды по шагам:
 
 ```
 cd apps/api
 npm ci
-DATABASE_URL=postgres://guss:guss@localhost:5432/guss npx prisma db push
-DATABASE_URL=postgres://guss:guss@localhost:5432/guss node prisma/seed.js
+set -a; source .env; set +a
+npx prisma generate
+npx prisma db push
+node prisma/seed.js
 npm run build
-PORT=3000 JWT_SECRET=dev-secret ROUND_DURATION=60 COOLDOWN_DURATION=30 \
-  DATABASE_URL=postgres://guss:guss@localhost:5432/guss node dist/main.js
+node dist/main.js
+```
+
+Windows PowerShell (вариант с dotenv-cli без установки глобально):
+
+```
+cd apps/api
+npm ci
+npx dotenv -e .env -- npx prisma generate
+npx dotenv -e .env -- npx prisma db push
+npx dotenv -e .env -- node prisma/seed.js
+npm run build
+npx dotenv -e .env -- node dist/main.js
 ```
 
 3. Проверка:
